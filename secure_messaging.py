@@ -12,7 +12,8 @@ class APDUProtector:
         self.des3dec = func_des_dec
         self.mac     = func_mac
         self.ssc     = ssc
-   
+        self.debug   = False
+
     def inc_ssc(self):
         done = False
         idx = len(self.ssc) - 1
@@ -37,13 +38,31 @@ class APDUProtector:
         return [0x87] + l + [0x01] + enc
 
     def __build_do97(self,le):
-        print("LE "+toHexString(le))
-        print(str(type(ber_tlv_len(len(le))[0])))
+        #print("LE "+toHexString(le))
+        #print(str(type(ber_tlv_len(len(le))[0])))
         do97 = [0x97] + ber_tlv_len(len(le)) + le
         # print("do97 :"+str(type(do97[0])))
         return do97
 
+    def trace_command(self,cla,ins,p1,p2,lc,data,le):
+        cmd = [cla, ins, p1, p2]
+        if(lc):
+            cmd += lc
+        if(data):
+            cmd += data
+        if(le):
+            cmd += le
+        print(">! "+toHexString(cmd))
+
+    def trace_response(self,data):
+        if(data):
+            print("<! "+toHexString(data))
+        else:
+            print("<! (no decoded data)")
+
     def protectAPDU(self,cla,ins,p1,p2,lc,data,le):
+        if(self.debug):
+            self.trace_command(cla,ins,p1,p2,lc,data,le)
         #mask cla
         mcla = set_bit_at(set_bit_at(cla,3,1),2,1)
         #construct cmd
@@ -62,7 +81,7 @@ class APDUProtector:
         to_be_macced = self.ssc + cmd + [0x80, 0x00, 0x00, 0x00] + do87 + do97
         # print("to be macced: "+toHexString(to_be_macced))
         cc = self.mac(to_be_macced)
-        print("cc : "+toHexString(cc))
+        #print("cc : "+toHexString(cc))
         do8e = [0x8E,0x08] + cc
         # print("do8e : "+toHexString(do8e))
         lc = hs2il("%02x" % (len(do87) + len(do97) + len(do8e)))
@@ -70,31 +89,38 @@ class APDUProtector:
 
     def parse_deccrypt_do87(self,rapdu):
         if(not rapdu[0] == 0x87):
+            if(self.debug):
+                self.trace_response(None)
             return None
         else:
             head, enc_data = dec_ber_tlv_len(rapdu[1:])
-            return unpad(self.des3dec(enc_data[1:]))
+            print("head: "+toHexString(head)+ " data enc: "+toHexString(enc_data))
+            data = unpad(self.des3dec(enc_data[1:]))
+            if(self.debug):
+                self.trace_response(data)
+            return data
 
     def __decode_do87(self,rapdu):
         head, data = dec_ber_tlv_len(rapdu[1:])
         return [0x87] + head + data
 
     def verifyRAPDU(self,rapdu):
-        print("rapdu: "+toHexString(rapdu))
-        print("do99 : +"+toHexString(rapdu[-16:-12]))
+        #print("rapdu: "+toHexString(rapdu))
+        #print("do99 : +"+toHexString(rapdu[-16:-12]))
         do99 = rapdu[-16:-12]
         do8e = rapdu[-12:]
         cc = rapdu[-10:-2]
         do87 = []
         if(rapdu[0] == 0x87):
             do87 = self.__decode_do87(rapdu)
-        print("ssc : "+toHexString(self.ssc))
-        print("do87 : "+toHexString(do87))
-        print("do99 :"+ toHexString(do99))
+        #print("ssc : "+toHexString(self.ssc))
+        #print("do87 : "+toHexString(do87))
+        #print("do99 :"+ toHexString(do99))
         p = self.ssc + pad(do87 + do99)
         # print("calc :"+toHexString(self.mac(self.ssc + do87 + do99)))
         if not (cc == self.mac(self.ssc + do87 + do99)):
             raise ValueError("Secure Messaging Error: MAC could not be verified!")
+
 
 """
 # some tests

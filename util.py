@@ -96,6 +96,34 @@ def xor_lists(ls_a,ls_b):
         ls.append(xor(a,b))
     return ls
 
+class Tlv_reader():
+
+    def __init__(self,tag_list, byte_seq):
+        self.tags = tag_list
+        self.bytes = byte_seq
+
+    def read(self,tag):
+        if(not tag in self.tags):
+            raise ValueError("unknown tag: "+toHexString([tag]))
+        else:
+            found = None
+            idx = 0
+            while(idx < len(self.bytes) -2):
+                if(self.bytes[idx:idx+1] == tag):
+                    l = self.bytes[idx+1]
+                    return self.bytes[idx+2:idx+2+l]
+                elif(self.bytes[idx:idx+2] == tag):
+                    l = self.bytes[idx+2]
+                    return self.bytes[idx+3:idx+3+l]
+                elif(self.bytes[idx:idx+1] in self.tags):
+                    l = self.bytes[idx+1]
+                    idx = idx + 2 + l
+                elif(self.bytes[idx:idx+2] in self.tags):
+                    l = self.bytes[idx+2]
+                    idx = idx + 3 + l
+                else:
+                    None
+
 
 from smartcard.util import toHexString
 seq = hs2il('0104')

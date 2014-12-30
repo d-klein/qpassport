@@ -19,10 +19,17 @@ from operator import xor
 #from Crypto.Cipher.blockalgo import MODE_CBC
 from secure_messaging import APDUProtector
 from retail_mac import RMAC
+from bac import run_bac
+from efcom import EFCom,read_ef_com
+from dg1 import DG1,read_dg1
 
 MRZ_DOC_NO = 'YV42109H95'
 MRZ_DOB    = '6305213'
 MRZ_EXP    = '1203314'
+#MRZ_DOC_NO = 'C4J6R0H111'
+#MRZ_DOB    = '8103206'
+#MRZ_EXP    = '1808074'
+
 MRZ_INFO = MRZ_DOC_NO + MRZ_DOB + MRZ_EXP
 BAC_IV = "0000000000000000".decode('hex')
 
@@ -43,102 +50,25 @@ cardservice.connection.addObserver( observer )
 # send a few apdus; exceptions will occur upon errors
 cardservice.connection.connect()
 
-try:
-    # select ICAO passport application
-    SELECT_ICAO_AID = [0x00, 0xA4, 0x04, 0x0C, 0x07, 0xA0, 0x00, 0x00, 0x02, 0x47, 0x10, 0x01]
-    apdu = SELECT_ICAO_AID
-    response, sw1, sw2 = cardservice.connection.transmit( apdu )
+# run Basic Access Control for secure messaging
+(ks_enc, ks_mac, ssc) = run_bac(cardservice.connection, MRZ_INFO)
 
-    # get 8 byte random number from chip
-    GET_CHALLENGE = [0x00, 0x84, 0x00, 0x00, 0x08]
-    apdu = GET_CHALLENGE
-    response, sw1, sw2 = cardservice.connection.transmit( apdu )   
-    rnd_icc = response
-    print("challenge received: "+toHexString(rnd_icc))
-    
-    # generate 8 byte random and 16 byte random
-    rnd_ifd = list(bytearray(os.urandom(8)))
-    print("rnd ifd: "+toHexString(rnd_ifd))
-    k_ifd = list(bytearray(os.urandom(16)))
-    print("k_ifd: "+toHexString(rnd_ifd))
+# setup secure messaging with derived keys
+des_sm = TDES(ks_enc)
+mac_sm = RMAC(ks_mac)
+ap = APDUProtector(des_sm.enc, des_sm.dec, mac_sm.mac, ssc)
+ap.debug = True
 
-    # concatenate to get s
-    s = rnd_ifd + rnd_icc + k_ifd
-    
-    # derive_key k_enc, k_mac
-    k_enc, k_mac = derive_doc_acc_keys(MRZ_INFO)
-
-    # print("derived k_enc: "+(k_enc))
-    print("as bytes :"+str(bytes(k_enc)))
-    print("len: "+str(len(str(k_enc))))
-
-    # encrypt s with 3des with key k_enc
-    des3 = TDES(k_enc)
-    e_ifd = des3.enc(s)
-    print("encrypted s: "+toHexString(e_ifd))
-
-    # calculate mac over encrypted s = e_ifd
-    rmc = RMAC(k_mac)
-    m_ifd = rmc.mac(e_ifd)
-    print("m_ifd : "+toHexString(m_ifd))
-
-    # build cmd for mutual authenticate
-    cmd = e_ifd + m_ifd
-    assert(len(cmd)==0x28)
-    MUTUAL_AUTH = [0x00, 0x82, 0x00, 0x00, 0x28] + cmd + [0x28]
-    apdu = MUTUAL_AUTH
-    response, sw1, sw2 = cardservice.connection.transmit( apdu )
-    
-    # decrypt response, check rnd_ifd
-    response_raw = des3.dec(response)
-    received_rnd_ifd = response_raw[8:16]
-    if(not received_rnd_ifd == rnd_ifd):
-        raise ValueError("Received R_IFD does not correspond to sent R_IFD")
-
-    k_icc = response_raw[16:32]
-    k_seed = xor_lists(k_icc,k_ifd)
-
-    # derive session keys for secure messaging
-    ks_enc = derive_key(k_seed,C_ENC)
-    ks_mac = derive_key(k_seed,C_MAC)
-
-    # calculate SSC
-    print("rnd_icc: "+toHexString(rnd_icc))
-    print("rnd_ifd: "+toHexString(rnd_ifd))
-    ssc = rnd_icc[4:8] + rnd_ifd[4:8]
-    print("ssc:    : "+toHexString(ssc))
-
-    # create protected apdus
-    des_sm = TDES(ks_enc)
-    mac_sm = RMAC(ks_mac)
-    ap = APDUProtector(des_sm.enc, des_sm.dec, mac_sm.mac, ssc)
-
-    ap.inc_ssc()
-    print("constructing papdu1")
-    papdu = ap.protectAPDU(0x00,0xA4,0x02,0x0C,[0x02],[0x01,0x1E],None)
-    print("apdu: "+toHexString(papdu))
-    rapdu,sw1,sw2 = cardservice.connection.transmit( papdu )
-
-    ap.inc_ssc()
-    ap.verifyRAPDU(rapdu+[sw1,sw2])
-
-    ap.inc_ssc()
-
-    papdu = ap.protectAPDU(0x00,0xB0,0x00,0x00,None,None,[0x04])
-    rapdu,sw1,sw2 = cardservice.connection.transmit( papdu )
-
-    ap.inc_ssc()
-    ap.verifyRAPDU(rapdu+[sw1,sw2])
-
-    data = ap.parse_deccrypt_do87(rapdu)
-
-    print("received data: "+toHexString(data))
+# read ef.com
+efcom = read_ef_com(cardservice.connection, ap)
+print("lds_version: "+toHexString(efcom.lds_version))
+print("utf_version: "+toHexString(efcom.utf_version))
+print("stored files: "+toHexString(efcom.stored_info_tags))
+dg1 = read_dg1(cardservice.connection, ap)
+print("MRZ:")
+print(dg1)
 
 
-
-
-except SWException, e:
-    print str(e)
 
 """
 

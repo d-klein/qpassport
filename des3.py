@@ -8,14 +8,15 @@ BAC_IV = "0000000000000000".decode('hex')
 class TDES:
 
     def __init__(self,key):
-        self.des3encoder = DES3.new(il2bs(key),DES3.MODE_CBC,BAC_IV)
-        self.des3decoder = DES3.new(il2bs(key),DES3.MODE_CBC,BAC_IV)
+        self.key = key
 
     def enc(self,msg):
-        return bs2il(self.des3encoder.encrypt(il2bs(msg)))
+        des3encoder = DES3.new(il2bs(self.key),DES3.MODE_CBC,BAC_IV)
+        return bs2il(des3encoder.encrypt(il2bs(msg)))
 
     def dec(self,msg):
-        return bs2il(self.des3decoder.decrypt(il2bs(msg)))
+        des3decoder = DES3.new(il2bs(self.key),DES3.MODE_CBC,BAC_IV)
+        return bs2il(des3decoder.decrypt(il2bs(msg)))
 
 """
 # some tests (from Doc 9303)
