@@ -61,7 +61,7 @@ class DG2:
 
         # read length (first 6 bytes) of DG2 to get file length
         rapdu,sw1,sw2 = ap.transmit_secure(connection,0x00,0xB0,0x00,0x00,None,None,[0x06])
-        data = ap.parse_deccrypt_do87(rapdu)
+        data = ap.parse_decrypt_do87(rapdu)
 
         if(data[0 == 0x75]):
             # read DG2
@@ -76,12 +76,12 @@ class DG2:
             for i in xrange(0,iterations):
                 p1,p2 = make_offset(offset)
                 rapdu,sw1,sw2 = ap.transmit_secure(connection,0x00,0xB0,p1,p2,None,None,[255])
-                data = ap.parse_deccrypt_do87(rapdu)
+                data = ap.parse_decrypt_do87(rapdu)
                 data_block.extend(data)
                 offset += 255
             p1,p2 = make_offset(offset)
             rapdu,sw1,sw2 = ap.transmit_secure(connection,0x00,0xB0,p1,p2,None,None,[last_len])
-            data = ap.parse_deccrypt_do87(rapdu)
+            data = ap.parse_decrypt_do87(rapdu)
             data_block += data
 
             # extract jp2 from dg2 data stream

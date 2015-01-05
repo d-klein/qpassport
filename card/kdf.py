@@ -9,8 +9,9 @@ C_MAC = [0x00, 0x00, 0x00, 0x02]
 def toggle_lsb(v):
     """
     flips the LSB in a byte
-    @param v: input byte supplied as int
-    @return : byte w/ flipped lsb supplied as int
+
+    :param v: input byte supplied as int
+    :return:byte w/ flipped lsb supplied as int
     """
     lsb = v & 1 
     if(lsb):
@@ -23,8 +24,9 @@ def adjust_parity(key):
     """
     adjusts the parity bits of a DES key
     (i.e. flips the bits as spec. in DES)
-    @param key: 8 byte DES key as byte list
-    @return : adjusted key as byte list
+
+    :param key: 8 byte DES key as byte list
+    :return: adjusted key as byte list
     """
     new_key = []
     for byte in key:
@@ -45,9 +47,10 @@ def adjust_parity(key):
 def derive_key(seed,c):
     """
     derives k_a, k_b as specified in ICAO 9303 App 6.1
-    @param seed : 16 byte key seed 
-    @param c : key/mac conc. (see 9303)
-    @return  : derived 16 byte key
+
+    :param seed: 16 byte key seed
+    :param c: key/mac conc. (see 9303)
+    :return : derived 16 byte key
     """
     d = seed + c
     h = hs2il(hashlib.sha1(bytearray(d)).hexdigest())
@@ -59,8 +62,8 @@ def derive_doc_acc_keys(mrz_info):
     """
     derives the document access keys (K_enc and K_mac)
     for BAC as spec. in ICAO 9303
-    @param mrz_info : String constructed from MRZ with 
-    @return : tuple of k_enc and k_mac, both byte lists
+    :param mrz_info : String constructed from MRZ with
+    :return: tuple of k_enc and k_mac, both byte lists
     """
     h_sha1 = hs2il(hashlib.sha1(bytearray(mrz_info)).hexdigest())
     k_seed = h_sha1[:16]

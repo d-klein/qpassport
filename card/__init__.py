@@ -1,1 +1,1 @@
-__author__ = 'gast'
+__author__ = 'Dominik Klein'

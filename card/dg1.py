@@ -43,7 +43,7 @@ class DG1:
         # read first six bytes of DG1 to get length
         rapdu,sw1,sw2 = ap.transmit_secure(connection,0x00,0xB0,0x00,0x00,None,None,[0x06])
 
-        data = ap.parse_deccrypt_do87(rapdu)
+        data = ap.parse_decrypt_do87(rapdu)
 
         # should be tag = 61
         # length starts from 2nd byte
@@ -58,7 +58,7 @@ class DG1:
 
             # read DG1 (everything from offset up to l)
             rapdu,sw1,sw2 = ap.transmit_secure(connection,0x00,0xB0,p1,p2,None,None,[l])
-            data = ap.parse_deccrypt_do87(rapdu)
+            data = ap.parse_decrypt_do87(rapdu)
 
             # extract mrz
             tlv = Tlv_reader([[0x5F,0x1F]],data)
