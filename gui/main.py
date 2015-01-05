@@ -110,12 +110,12 @@ class MWindow(QtGui.QMainWindow):
         self.edit_log.append("... accessing passport ...\n")
         self.edit_log.update()
 
-        #MRZ_DOC_NO = 'YV42109H95'
-        #MRZ_DOB    = '6305213'
-        #MRZ_EXP    = '1203314'
-        MRZ_DOC_NO = 'C4J6R0H111'
-        MRZ_DOB    = '8103206'
-        MRZ_EXP    = '1808074'
+        MRZ_DOC_NO = 'YV42109H95'
+        MRZ_DOB    = '6305213'
+        MRZ_EXP    = '1203314'
+        #MRZ_DOC_NO = 'C4J6R0H111'
+        #MRZ_DOB    = '8103206'
+        #MRZ_EXP    = '1808074'
 
         MRZ_INFO = MRZ_DOC_NO + MRZ_DOB + MRZ_EXP
         BAC_IV = "0000000000000000".decode('hex')
