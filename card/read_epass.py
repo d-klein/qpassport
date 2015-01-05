@@ -1,28 +1,24 @@
 from smartcard.CardType import AnyCardType
 from smartcard.CardRequest import CardRequest
 from smartcard.CardConnectionObserver import ConsoleCardConnectionObserver
-
 from smartcard.sw.ErrorCheckingChain import ErrorCheckingChain
 from smartcard.sw.ISO7816_4ErrorChecker import ISO7816_4ErrorChecker
-from smartcard.sw.SWExceptions import SWException, WarningProcessingException
-
 from smartcard.util import toHexString
-from smartcard.util import hl2bs as il2bs
-from smartcard.util import bs2hl as bs2il
-import os
-import hashlib
-from kdf import derive_doc_acc_keys, derive_key, C_ENC, C_MAC
-import retail_mac
-from util import hs2il,xor_lists
+
 from des3 import TDES
-from operator import xor
+
+
+
+
+
+
 #from Crypto.Cipher.blockalgo import MODE_CBC
-from secure_messaging import APDUProtector
-from retail_mac import RMAC
-from bac import run_bac
-from efcom import EFCom
-from dg1 import DG1
-from dg2 import DG2
+from card.secure_messaging import SecureMessenger
+from card.retail_mac import RMAC
+from card.bac import run_bac
+from card.efcom import EFCom
+from card.dg1 import DG1
+from card.dg2 import DG2
 
 MRZ_DOC_NO = 'YV42109H95'
 MRZ_DOB    = '6305213'
@@ -57,7 +53,7 @@ cardservice.connection.connect()
 # setup secure messaging with derived keys
 des_sm = TDES(ks_enc)
 mac_sm = RMAC(ks_mac)
-ap = APDUProtector(des_sm.enc, des_sm.dec, mac_sm.mac, ssc)
+ap = SecureMessenger(des_sm.enc, des_sm.dec, mac_sm.mac, ssc)
 ap.debug = True
 
 # read ef.com

@@ -1,6 +1,7 @@
-from smartcard.util import toHexString
 import hashlib
-from util import hs2il
+
+from card.util import hs2il
+
 
 C_ENC = [0x00, 0x00, 0x00, 0x01]
 C_MAC = [0x00, 0x00, 0x00, 0x02]

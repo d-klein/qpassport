@@ -1,7 +1,4 @@
-from util import Tlv_reader
-from smartcard.util import toHexString
-from util import il2hs
-from util import get_ber_tlv_len, dec_ber_tlv_len, make_offset
+from card.util import get_ber_tlv_len, dec_ber_tlv_len, make_offset
 
 def get_raw_image(seq):
     #
@@ -30,12 +27,34 @@ def get_raw_image(seq):
     return dec[idx:]
 
 class DG2:
+    """
+    given a pyscard connection and a secure messenger,
+    read dg2 and extract the jp2 image file
+
+    Example:
+    >>> dg2 = DG2()
+    >>> dg2.read(connection, secure_messenger)
+    >>> if(dg2.raw_image):
+    >>>     img= open("portrait.jp2",'wb+')
+    >>>     img.write(bytearray(dg2.raw_image))
+    >>>     img.flush()
+    >>>     img.close()
+
+    """
     def __init__(self):
         self.raw_image = None
 
     def __str__(self): pass
 
     def read_dg2(self,connection,ap):
+        """
+        reads jp2 image from dg2 and stores list of byte
+        in self.raw_image
+
+        :param connection: pyscard connection
+        :param ap: secure messaging object for apdu protection
+        :return:
+        """
 
         # select DG2
         ap.transmit_secure(connection,0x00,0xA4,0x02,0x0C,[0x02],[0x01,0x02],None)

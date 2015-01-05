@@ -1,12 +1,22 @@
-from kdf import derive_doc_acc_keys, derive_key, C_ENC, C_MAC
-from des3 import TDES
-from retail_mac import RMAC
 import os
-from util import xor_lists
 from smartcard.sw.SWExceptions import SWException
 
-def run_bac(connection,mrz):
+from kdf import derive_doc_acc_keys, derive_key, C_ENC, C_MAC
+from card.des3 import TDES
+from retail_mac import RMAC
+from util import xor_lists
 
+
+def run_bac(connection,mrz):
+    """
+    Run Basic Access Control as defined in ICAO Doc 9303
+    to get secure messaging keys
+
+    :param connection: a pyscard connection
+    :param mrz: string, concatenated parts of the mrz,
+           namely the doc. no. + check digit + date of birth + check digit + doc. expiration date + check digit
+    :return: Triple (encryption key, mac key, session seq. counter), all list of bytes
+    """
     try:
         # select ICAO passport application
         SELECT_ICAO_AID = [0x00, 0xA4, 0x04, 0x0C, 0x07, 0xA0, 0x00, 0x00, 0x02, 0x47, 0x10, 0x01]

@@ -1,8 +1,19 @@
-from util import Tlv_reader
-from smartcard.util import toHexString
-from util import get_ber_tlv_len, make_offset
+from card.util import get_ber_tlv_len, make_offset, Tlv_reader
 
 class DG1:
+    """
+    given a pyscard connection and a secure messenger,
+    read dg1 and extract the machine readable zone (mrz)
+
+    Example:
+    >>> dg1 = DG1()
+    >>> dg1.read(connection, secure_messenger)
+    >>> print("raw byte sequence "+str(dg1.mrz_bin))
+    >>> print("mrz line 1: "+str(dg1.mrz_line1))
+    >>> print("mrz line 2: "+str(dg1.mrz_line2))
+    >>> print("mrz line 3: "+str(dg1.mrz_line3))
+    """
+
     def __init__(self):
         self.mrz_bin = None
         self.mrz_line1 = None
@@ -20,6 +31,11 @@ class DG1:
         return out
 
     def read_dg1(self,connection,ap):
+        """
+        :param connection: pyscard connection
+        :param ap: secure messaging object for apdu protection
+        :return:
+        """
 
         # select DG1
         ap.transmit_secure(connection,0x00,0xA4,0x02,0x0C,[0x02],[0x01,0x01],None)

@@ -1,11 +1,9 @@
-from util import pad,hs2il,il2hs,set_bit_at,ber_tlv_len,dec_ber_tlv_len,unpad
-from des3 import TDES
-from retail_mac import RMAC
-import struct
-from binascii import unhexlify
 from smartcard.util import toHexString
 
-class APDUProtector:
+from util import pad,hs2il, set_bit_at,ber_tlv_len,dec_ber_tlv_len,unpad
+
+
+class SecureMessenger:
 
     def __init__(self,func_des_enc,func_des_dec,func_mac,ssc):
         self.des3enc = func_des_enc
