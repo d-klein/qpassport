@@ -20,8 +20,9 @@ from operator import xor
 from secure_messaging import APDUProtector
 from retail_mac import RMAC
 from bac import run_bac
-from efcom import EFCom,read_ef_com
-from dg1 import DG1,read_dg1
+from efcom import EFCom
+from dg1 import DG1
+from dg2 import DG2
 
 MRZ_DOC_NO = 'YV42109H95'
 MRZ_DOB    = '6305213'
@@ -60,13 +61,17 @@ ap = APDUProtector(des_sm.enc, des_sm.dec, mac_sm.mac, ssc)
 ap.debug = True
 
 # read ef.com
-efcom = read_ef_com(cardservice.connection, ap)
+efcom = EFCom()
+efcom.read_ef_com(cardservice.connection, ap)
 print("lds_version: "+toHexString(efcom.lds_version))
 print("utf_version: "+toHexString(efcom.utf_version))
 print("stored files: "+toHexString(efcom.stored_info_tags))
-dg1 = read_dg1(cardservice.connection, ap)
+dg1 = DG1()
+dg1.read_dg1(cardservice.connection, ap)
 print("MRZ:")
 print(dg1)
+dg2 = DG2()
+dg2.read_dg2(cardservice.connection, ap)
 
 
 

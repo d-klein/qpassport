@@ -94,7 +94,7 @@ class APDUProtector:
             return None
         else:
             head, enc_data = dec_ber_tlv_len(rapdu[1:])
-            print("head: "+toHexString(head)+ " data enc: "+toHexString(enc_data))
+            # print("head: "+toHexString(head)+ " data enc: "+toHexString(enc_data))
             data = unpad(self.des3dec(enc_data[1:]))
             if(self.debug):
                 self.trace_response(data)
@@ -102,6 +102,7 @@ class APDUProtector:
 
     def __decode_do87(self,rapdu):
         head, data = dec_ber_tlv_len(rapdu[1:])
+        print("enc data "+toHexString(data))
         return [0x87] + head + data
 
     def verifyRAPDU(self,rapdu):
@@ -120,6 +121,14 @@ class APDUProtector:
         # print("calc :"+toHexString(self.mac(self.ssc + do87 + do99)))
         if not (cc == self.mac(self.ssc + do87 + do99)):
             raise ValueError("Secure Messaging Error: MAC could not be verified!")
+
+    def transmit_secure(self,connection,cla,ins,p1,p2,lc,data,le):
+        self.inc_ssc()
+        papdu = self.protectAPDU(cla,ins,p1,p2,lc,data,le)
+        rapdu,sw1,sw2 = connection.transmit( papdu )
+        self.inc_ssc()
+        self.verifyRAPDU(rapdu+[sw1,sw2])
+        return rapdu,sw1,sw2
 
 
 """

@@ -84,11 +84,29 @@ def dec_ber_tlv_len(seq):
         l = 256*seq[1] + seq[2]
         return (seq[0:3],seq[3:l+3])
     elif(seq[0] == 0x81):
-        l = seq[2]
+        l = seq[1]
         return (seq[0:2],seq[2:l+2])
     else:
         l = seq[0]
         return (seq[0:1],seq[1:l+1])
+
+def get_ber_tlv_len(seq):
+    l = 0
+    if(seq[0] == 0x84):
+        l = 16777216 * seq[1] + 65536 * seq[2] + 256*seq[3] + seq[4]
+        return l,5
+    elif(seq[0] == 0x83):
+        l = 65536 * seq[1] + 256*seq[2] + seq[3]
+        return l,4
+    elif(seq[0] == 0x82):
+        l = 256*seq[1] + seq[2]
+        return l,3
+    elif(seq[0] == 0x81):
+        l = seq[1]
+        return l,2
+    else:
+        l = seq[0]
+        return l,1
 
 def xor_lists(ls_a,ls_b):
     ls = []
@@ -122,6 +140,7 @@ class Tlv_reader():
                     l = self.bytes[idx+2]
                     idx = idx + 3 + l
                 else:
+                    print("error")
                     None
 
 
@@ -140,3 +159,5 @@ print("unpadded: "+toHexString(unpad(seq)))
 seq = hs2il('60145F01')
 print("expected: 60 14 5F 01")
 print("unpadded: "+toHexString(unpad(seq)))
+print("ber tlv of 12704: "+toHexString(ber_tlv_len(12704*1024)))
+print("dec ber-tlv of 82319EC: "+str(get_ber_tlv_len([0x082,0x31,0x9E])))
