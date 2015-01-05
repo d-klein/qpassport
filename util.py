@@ -108,6 +108,11 @@ def get_ber_tlv_len(seq):
         l = seq[0]
         return l,1
 
+def make_offset(int_val):
+        x = int_val // 256
+        r = int_val % 256
+        return (x,r)
+
 def xor_lists(ls_a,ls_b):
     ls = []
     for (a,b) in zip(ls_a,ls_b):

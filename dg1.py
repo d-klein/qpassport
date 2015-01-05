@@ -1,6 +1,6 @@
 from util import Tlv_reader
 from smartcard.util import toHexString
-from util import il2hs
+from util import get_ber_tlv_len, make_offset
 
 class DG1:
     def __init__(self):
@@ -24,40 +24,27 @@ class DG1:
         # select DG1
         ap.transmit_secure(connection,0x00,0xA4,0x02,0x0C,[0x02],[0x01,0x01],None)
 
-        ap.inc_ssc()
-        papdu = ap.protectAPDU(0x00,0xA4,0x02,0x0C,[0x02],[0x01,0x01],None)
-        rapdu,sw1,sw2 = connection.transmit( papdu )
-
-        ap.inc_ssc()
-        ap.verifyRAPDU(rapdu+[sw1,sw2])
-
-        # read first two bytes of DG1
-        ap.inc_ssc()
-        papdu = ap.protectAPDU(0x00,0xB0,0x00,0x00,None,None,[0x02])
-        rapdu,sw1,sw2 = connection.transmit( papdu )
-
-        ap.inc_ssc()
-        ap.verifyRAPDU(rapdu+[sw1,sw2])
+        # read first six bytes of DG1 to get length
+        rapdu,sw1,sw2 = ap.transmit_secure(connection,0x00,0xB0,0x00,0x00,None,None,[0x06])
 
         data = ap.parse_deccrypt_do87(rapdu)
-        print("received two bytes of DG1: "+toHexString(data) )
 
-
-        # should be tag = 60, length = 2nd byte
+        # should be tag = 61
+        # length starts from 2nd byte
         if(data[0] == 0x61):
-            # read DG1 (everything from offset 2 up to len)
-            l = data[1]
-            print("len: "+toHexString([l]))
-            ap.inc_ssc()
-            papdu = ap.protectAPDU(0x00,0xB0,0x00,0x02,None,None,[l])
-            rapdu,sw1,sw2 = connection.transmit( papdu )
+            # determin length of length of dg1 and offset
+            # offset = 0x61 (1 Byte) + length of length field itself
+            l,len_of_l = get_ber_tlv_len(data[1:])
 
-            ap.inc_ssc()
-            ap.verifyRAPDU(rapdu+[sw1,sw2])
+            # offset = 0x61 (1 Byte) + length of length field itself
+            offset = len_of_l + 1
+            p1,p2 = make_offset(offset)
 
+            # read DG1 (everything from offset up to l)
+            rapdu,sw1,sw2 = ap.transmit_secure(connection,0x00,0xB0,p1,p2,None,None,[l])
             data = ap.parse_deccrypt_do87(rapdu)
-            #print("dg1 : "+toHexString(data))
 
+            # extract mrz
             tlv = Tlv_reader([[0x5F,0x1F]],data)
             self.mrz_bin = tlv.read([0x5F,0x1F])
             mrz_txt = ''.join([chr(x) for x in self.mrz_bin])
@@ -77,6 +64,5 @@ class DG1:
             else:
                 l = len(mrz_txt)
                 raise ValueError("unknown MRZ of length "+str(l)+": "+str(mrz_txt))
-
         else:
             raise ValueError("could not read EF.COM (wrong tag)")

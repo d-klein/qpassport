@@ -1,7 +1,7 @@
 from util import Tlv_reader
 from smartcard.util import toHexString
 from util import il2hs
-from util import get_ber_tlv_len, dec_ber_tlv_len
+from util import get_ber_tlv_len, dec_ber_tlv_len, make_offset
 
 def get_raw_image(seq):
     #
@@ -35,11 +35,6 @@ class DG2:
 
     def __str__(self): pass
 
-    def make_offset(self,int_val):
-        x = int_val // 256
-        r = int_val % 256
-        return (x,r)
-
     def read_dg2(self,connection,ap):
 
         # select DG2
@@ -60,21 +55,19 @@ class DG2:
             last_len = l % 255
             # read dg2
             for i in xrange(0,iterations):
-                p1,p2 = self.make_offset(offset)
+                p1,p2 = make_offset(offset)
                 rapdu,sw1,sw2 = ap.transmit_secure(connection,0x00,0xB0,p1,p2,None,None,[255])
                 data = ap.parse_deccrypt_do87(rapdu)
                 data_block.extend(data)
                 offset += 255
-            p1,p2 = self.make_offset(offset)
+            p1,p2 = make_offset(offset)
             rapdu,sw1,sw2 = ap.transmit_secure(connection,0x00,0xB0,p1,p2,None,None,[last_len])
             data = ap.parse_deccrypt_do87(rapdu)
             data_block += data
 
             # extract jp2 from dg2 data stream
-            raw_image = get_raw_image(data_block)
+            self.raw_image = get_raw_image(data_block)
 
-            # write to file
-            img= open("test_ef_dg2.jp2",'wb+')
-            img.write(bytearray(raw_image))
-            img.flush()
-            img.close()
+        else:
+            raise ValueError("could not read DG2.COM (wrong tag)")
+

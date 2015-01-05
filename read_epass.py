@@ -73,7 +73,12 @@ print(dg1)
 dg2 = DG2()
 dg2.read_dg2(cardservice.connection, ap)
 
-
+# write to file
+if(dg2.raw_image):
+    img= open("test_ef_dg2.jp2",'wb+')
+    img.write(bytearray(dg2.raw_image))
+    img.flush()
+    img.close()
 
 """
 
