@@ -8,7 +8,7 @@ Machine Readable Zone) and datagroup 2 (DG2, digitally stored portrait)
 by executing Basic Access Control (BAC) as defined in ICAO 9303.
 
 There are other libraries and tools that already implement BAC (such
-as [http://rfidiot.org](RFIDIOT) ), but I wanted to implement this myself as an exercise
+as [RFIDIOT](http://rfidiot.org)), but I wanted to implement this myself as an exercise
 to get familiar with secure messaging, the file structure, 
 access mechanisms, and ISO 7816-4 of passports.
 
