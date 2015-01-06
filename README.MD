@@ -19,6 +19,12 @@ At least I hope so :-)
 License is GNU GPL 2.
 (c) 2014,2015 Dominik Klein
 
+Screenshot
+----------
+----------
+
+![Application Screenshot](http://
+
 Installation
 ------------
 ------------
