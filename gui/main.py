@@ -16,6 +16,7 @@ from card.bac import run_bac
 from card.efcom import EFCom
 from card.dg1 import DG1
 from card.dg2 import DG2
+from mrz_dialog import Mrz_Dialog
 
 class OutLog:
     def __init__(self, edit, out=None, color=None):
@@ -81,6 +82,8 @@ class MWindow(QtGui.QMainWindow):
         self.edit_log.setReadOnly(True)
 
         sys.stdout = OutLog( self.edit_log, sys.stdout)
+        sys.stderr = OutLog( self.edit_log, sys.__stderr__)
+
 
         self.go = Qt.QPushButton("Read Passport")
         self.go.setFont(font)
@@ -139,6 +142,21 @@ class MWindow(QtGui.QMainWindow):
         #MRZ_DOC_NO = 'C4J6R0H111'
         #MRZ_DOB    = '8103206'
         #MRZ_EXP    = '1808074'
+
+        dialog = Mrz_Dialog()
+        if dialog.exec_() == Qt.QDialog.Accepted:
+            if(str(dialog.le_line3.text()) != ""):
+                MRZ_DOC_NO = str(dialog.le_line1.text()[5:15]).upper()
+                MRZ_DOB    = str(dialog.le_line2.text()[0:7]).upper()
+                MRZ_EXP    = str(dialog.le_line2.text()[8:15]).upper()
+            else:
+                MRZ_DOC_NO = str(dialog.le_line2.text()[0:10]).upper()
+                MRZ_DOB    = str(dialog.le_line2.text()[13:20]).upper()
+                MRZ_EXP    = str(dialog.le_line2.text()[21:28]).upper()
+
+        print(MRZ_DOC_NO)#
+        print(MRZ_DOB)
+        print(MRZ_EXP)
 
         MRZ_INFO = MRZ_DOC_NO + MRZ_DOB + MRZ_EXP
         BAC_IV = "0000000000000000".decode('hex')
@@ -249,9 +267,9 @@ class MWindow(QtGui.QMainWindow):
         except CardRequestTimeoutException:
             self.edit_log.append('time-out: no card inserted during last 10s')
 
-        except:
-            import sys
-            self.edit_log.append(sys.exc_info()[1])
+        #except:
+        #    import sys
+        #    self.edit_log.append("unknown error (see log)\n")
 
 
 def main():
