@@ -8,6 +8,7 @@ from smartcard.CardConnectionObserver import ConsoleCardConnectionObserver
 from smartcard.sw.ErrorCheckingChain import ErrorCheckingChain
 from smartcard.sw.ISO7816_4ErrorChecker import ISO7816_4ErrorChecker
 from smartcard.util import toHexString
+from smartcard.Exceptions import CardRequestTimeoutException
 from card.des3 import TDES
 from card.secure_messaging import SecureMessenger
 from card.retail_mac import RMAC
@@ -16,18 +17,37 @@ from card.efcom import EFCom
 from card.dg1 import DG1
 from card.dg2 import DG2
 
-class EmittingStream(QtCore.QObject):
+class OutLog:
+    def __init__(self, edit, out=None, color=None):
+        """(edit, out=None, color=None) -> can write stdout, stderr to a
+        QTextEdit.
+        edit = QTextEdit
+        out = alternate stream ( can be the original sys.stdout )
+        color = alternate color (i.e. color stderr a different color)
+        """
+        self.edit = edit
+        self.out = None
+        self.color = color
 
-    textWritten = QtCore.pyqtSignal(str)
+    def write(self, m):
+        if self.color:
+            tc = self.edit.textColor()
+            self.edit.setTextColor(self.color)
 
-    def write(self, text):
-        self.textWritten.emit(str(text))
+        self.edit.moveCursor(QtGui.QTextCursor.End)
+        self.edit.insertPlainText( m )
+
+        if self.color:
+            self.edit.setTextColor(tc)
+
+        if self.out:
+            self.out.write(m)
 
 class MWindow(QtGui.QMainWindow):
 
     def __init__(self):
         super(MWindow, self).__init__()
-        sys.stdout = EmittingStream(textWritten=self.normalOutputWritten)
+        # sys.stdout = EmittingStream(textWritten=self.normalOutputWritten)
         self.initUI()
 
     def __del__(self):
@@ -59,6 +79,9 @@ class MWindow(QtGui.QMainWindow):
         self.edit_log.setMinimumHeight(200)
         self.edit_log.setFont(font)
         self.edit_log.setReadOnly(True)
+
+        sys.stdout = OutLog( self.edit_log, sys.stdout)
+
         self.go = Qt.QPushButton("Read Passport")
         self.go.setFont(font)
 
@@ -108,7 +131,7 @@ class MWindow(QtGui.QMainWindow):
 
     def read_pass(self):
         self.edit_log.append("... accessing passport ...\n")
-        self.edit_log.update()
+        Qt.QApplication.processEvents()
 
         MRZ_DOC_NO = 'YV42109H95'
         MRZ_DOB    = '6305213'
@@ -123,98 +146,112 @@ class MWindow(QtGui.QMainWindow):
         # request any card
         cardtype = AnyCardType()
         cardrequest = CardRequest( timeout=10, cardType=cardtype )
-        cardservice = cardrequest.waitforcard()
+        try:
+            cardservice = cardrequest.waitforcard()
 
-        # our error checking chain
-        errorchain=[]
-        errorchain=[ ErrorCheckingChain( errorchain, ISO7816_4ErrorChecker() ) ]
-        cardservice.connection.setErrorCheckingChain( errorchain )
+            # our error checking chain
+            errorchain=[]
+            errorchain=[ ErrorCheckingChain( errorchain, ISO7816_4ErrorChecker() ) ]
+            cardservice.connection.setErrorCheckingChain( errorchain )
 
-        # a console tracer
-        observer=ConsoleCardConnectionObserver()
-        cardservice.connection.addObserver( observer )
+            # a console tracer
+            observer=ConsoleCardConnectionObserver()
+            cardservice.connection.addObserver( observer )
 
-        # send a few apdus; exceptions will occur upon errors
-        cardservice.connection.connect()
+            # send a few apdus; exceptions will occur upon errors
+            cardservice.connection.connect()
 
-        # run Basic Access Control for secure messaging
-        (ks_enc, ks_mac, ssc) = run_bac(cardservice.connection, MRZ_INFO)
+            # run Basic Access Control for secure messaging
+            (ks_enc, ks_mac, ssc) = run_bac(cardservice.connection, MRZ_INFO)
 
-        # setup secure messaging with derived keys
-        des_sm = TDES(ks_enc)
-        mac_sm = RMAC(ks_mac)
-        ap = SecureMessenger(des_sm.enc, des_sm.dec, mac_sm.mac, ssc)
-        ap.debug = True
+            Qt.QApplication.processEvents()
 
-        # read ef.com
-        efcom = EFCom()
-        efcom.read_ef_com(cardservice.connection, ap)
-        print("lds_version: "+toHexString(efcom.lds_version))
-        print("utf_version: "+toHexString(efcom.utf_version))
-        print("stored files: "+toHexString(efcom.stored_info_tags))
-        dg1 = DG1()
-        dg1.read_dg1(cardservice.connection, ap)
-        print("MRZ:" + str(dg1))
-        self.edit_mrz.setText(str(dg1))
-        dg2 = DG2()
-        dg2.read_dg2(cardservice.connection, ap)
+            # setup secure messaging with derived keys
+            des_sm = TDES(ks_enc)
+            mac_sm = RMAC(ks_mac)
+            ap = SecureMessenger(des_sm.enc, des_sm.dec, mac_sm.mac, ssc)
+            ap.debug = True
 
-        type = ""
-        code = ""
-        passport_no = ""
-        name = ""
-        gname = ""
-        dob = ""
-        sex = ""
-        doi = ""
-        eoi = ""
-        if(not (dg1.mrz_line3) and dg1.mrz_line1 and dg1.mrz_line2):
-            type = dg1.mrz_line1[0:2]
-            code = dg1.mrz_line1[2:5]
-            full_name = dg1.mrz_line1[5:]
-            sur_g = full_name.split("<<")
-            name = sur_g[0]
-            gname = sur_g[1]
-            passport_no = dg1.mrz_line2[0:9]
-            dob = self.format_date(dg1.mrz_line2[13:19])
-            eoi = self.format_date(dg1.mrz_line2[21:27])
-            sex = dg1.mrz_line2[20]
-        elif((dg1.mrz_line3) and dg1.mrz_line1 and dg1.mrz_line2):
-            sur_g = dg1.mrz_line3.split("<<")
-            name = sur_g[0]
-            gname = sur_g[1]
-            type = dg1.mrz_line1[0:2]
-            code = dg1.mrz_line1[2:5]
-            passport_no = dg1.mrz_line1[5:14]
-            dob = self.format_date(dg1.mrz_line2[0:6])
-            eoi = self.format_date(dg1.mrz_line2[8:14])
-            sex = dg1.mrz_line2[7]
+            # read ef.com
+            efcom = EFCom()
+            efcom.read_ef_com(cardservice.connection, ap)
+            print("lds_version: "+toHexString(efcom.lds_version))
+            print("utf_version: "+toHexString(efcom.utf_version))
+            print("stored files: "+toHexString(efcom.stored_info_tags))
 
-        s = "Type         Code        Passport No      \n" + \
-            type + "            "+code + "          " + passport_no + "\n\n" + \
-            "Given Name\n" + \
-            gname + "\n\n" + \
-            "Name\n" + \
-            name + "\n\n" + \
-            "Nationality        Date of Birth\n" + \
-            code + "                    " + dob + "\n\n" + \
-            "Sex        Date of Expiry\n" + \
-            sex + "            " + eoi
+            Qt.QApplication.processEvents()
 
-        self.edit_right.setText(s)
+            dg1 = DG1()
+            dg1.read_dg1(cardservice.connection, ap)
+            self.edit_mrz.setText(str(dg1))
+            Qt.QApplication.processEvents()
 
 
+            type = ""
+            code = ""
+            passport_no = ""
+            name = ""
+            gname = ""
+            dob = ""
+            sex = ""
+            doi = ""
+            eoi = ""
+            if(not (dg1.mrz_line3) and dg1.mrz_line1 and dg1.mrz_line2):
+                type = dg1.mrz_line1[0:2]
+                code = dg1.mrz_line1[2:5]
+                full_name = dg1.mrz_line1[5:]
+                sur_g = full_name.split("<<")
+                name = sur_g[0]
+                gname = sur_g[1]
+                passport_no = dg1.mrz_line2[0:9]
+                dob = self.format_date(dg1.mrz_line2[13:19])
+                eoi = self.format_date(dg1.mrz_line2[21:27])
+                sex = dg1.mrz_line2[20]
+            elif((dg1.mrz_line3) and dg1.mrz_line1 and dg1.mrz_line2):
+                sur_g = dg1.mrz_line3.split("<<")
+                name = sur_g[0]
+                gname = sur_g[1]
+                type = dg1.mrz_line1[0:2]
+                code = dg1.mrz_line1[2:5]
+                passport_no = dg1.mrz_line1[5:14]
+                dob = self.format_date(dg1.mrz_line2[0:6])
+                eoi = self.format_date(dg1.mrz_line2[8:14])
+                sex = dg1.mrz_line2[7]
 
-        # write to file
-        if(dg2.raw_image):
-            img= open("temp.jp2",'wb+')
-            img.write(bytearray(dg2.raw_image))
-            img.flush()
-            img.close()
-            portrait = Qt.QPixmap("./temp.jp2").scaled(300,400)
-            self.lbl_portrait.setPixmap(portrait)
-            self.update()
+            s = "Type         Code        Passport No      \n" + \
+                type + "            "+code + "          " + passport_no + "\n\n" + \
+                "Given Name\n" + \
+                gname + "\n\n" + \
+                "Name\n" + \
+                name + "\n\n" + \
+                "Nationality        Date of Birth\n" + \
+                code + "                    " + dob + "\n\n" + \
+                "Sex        Date of Expiry\n" + \
+                sex + "            " + eoi
 
+            self.edit_right.setText(s)
+
+            dg2 = DG2()
+            dg2.read_dg2(cardservice.connection, ap)
+
+            Qt.QApplication.processEvents()
+
+            # write to file
+            if(dg2.raw_image):
+                img= open("temp.jp2",'wb+')
+                img.write(bytearray(dg2.raw_image))
+                img.flush()
+                img.close()
+                portrait = Qt.QPixmap("./temp.jp2").scaled(300,400)
+                self.lbl_portrait.setPixmap(portrait)
+                self.update()
+
+        except CardRequestTimeoutException:
+            self.edit_log.append('time-out: no card inserted during last 10s')
+
+        except:
+            import sys
+            self.edit_log.append(sys.exc_info()[1])
 
 
 def main():
