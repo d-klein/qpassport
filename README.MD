@@ -16,6 +16,8 @@ The sourcecode (the card part, not the messy gui part) might also
 help you to get some overview on how all of the above work together.
 At least I hope so :-)
 
+License is GNU GPL 2.
+
 Installation
 ------------
 ------------
