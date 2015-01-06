@@ -34,6 +34,10 @@ but are untested right now.
 
 Linux Installation:
 
+Download the zip archive of this repository 
+[here](https://github.com/d-klein/qpassport/archive/master.zip)
+or via the link on the right side.
+
 The following packages must be installed first (package names
 are from Ubuntu, but should be named similar in other
 distros):
