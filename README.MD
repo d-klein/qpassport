@@ -23,7 +23,7 @@ Screenshot
 ----------
 ----------
 
-![Application Screenshot](http://
+![Application Screenshot](https://raw.githubusercontent.com/d-klein/qpassport/master/screenshot.png)
 
 Installation
 ------------
