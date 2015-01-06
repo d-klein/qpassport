@@ -17,6 +17,7 @@ help you to get some overview on how all of the above work together.
 At least I hope so :-)
 
 License is GNU GPL 2.
+(c) 2014,2015 Dominik Klein
 
 Installation
 ------------
