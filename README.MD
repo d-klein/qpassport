@@ -43,7 +43,7 @@ are from Ubuntu, but should be named similar in other
 distros):
 
 - pcsc-tools
-- python (2)
+- python (Version >=2.7 but <3)
 - python-crypto
 - python-qt4-dev
 - python-pyscard
