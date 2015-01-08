@@ -29,12 +29,13 @@ class EFCom:
         if(self.utf_version != None):
             s += "Unicode Version: "+ self.utf_version[0:2]+"."+self.utf_version[2:4]+"."+self.utf_version[4:6] + "\n"
         if(self.stored_info_tags != None):
-            s += ("stored files   : ")
+            s += ("Stored Tags    : ")
             for idx, tag in enumerate(self.stored_info_tags):
                 info = tags.lookup([tag])
-                if(idx > 0):
-                    s += "                 "
-                s += toHexString([tag]) + " "+info.upper()+"\n"
+                if(idx == 0):
+                    s += toHexString([tag]) + " "+info.upper()+"\n"
+                else:
+                    s += "                 "+toHexString([tag]) + " "+info.upper()+"\n"
         return s
 
     def read_ef_com(self,connection,ap):

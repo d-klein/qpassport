@@ -14,8 +14,9 @@ from card.retail_mac import RMAC
 from card.bac import run_bac
 from card.efcom import EFCom
 from card.dg1 import DG1
-from card.dg2 import DG2
+from card.dg2 import DG234
 import card.tags
+import smartcard
 
 MRZ_DOC_NO = 'YV42109H95'
 MRZ_DOB    = '6305213'
@@ -74,16 +75,68 @@ try:
     dg1.read_dg1(cardservice.connection, ap)
     print(str(dg1))
 
-    print("\nreading DG2...")
-    dg2 = DG2()
-    dg2.read_dg2(cardservice.connection, ap)
-    # write to file
-    if(dg2.raw_image):
-        img= open("temp.jp2",'wb+')
-        img.write(bytearray(dg2.raw_image))
-        img.flush()
-        img.close()
-        print("saved portrait as temp.jp2")
+    print("\nreading DG2... (facial image)")
+    dg2 = DG234(2,0x75)
+    dg2.read_dg234(cardservice.connection, ap)
+    for idx,bit in enumerate(dg2.bio_info_templates):
+        print(str(bit))
+        if(bit.jp2):
+            fn = MRZ_DOC_NO+"_DG2_"+str(idx)+".jp2"
+            print("JPEG2000  present  : Yes, saving as "+fn+"\n")
+            img= open(fn,'wb+')
+            img.write(bytearray(bit.jp2))
+            img.flush()
+            img.close()
+        if(bit.jpeg):
+            fn = "DG2_"+MRZ_DOC_NO+"_"+str(idx)+".jpg"
+            print("JPEG      present  : Yes, saving as "+fn+"\n")
+            img= open(fn,'wb+')
+            img.write(bytearray(bit.jp2))
+            img.flush()
+            img.close()
+
+    print("\nprobing for DG3... (fingerprints)")
+    try:
+        dg3 = DG234(3,0x63)
+        dg3.read_dg234(cardservice.connection, ap)
+        for idx,bit in enumerate(dg3.bio_info_templates):
+            fn = "DG3_"+MRZ_DOC_NO+"_"+str(idx)+".raw"
+            print("saving (raw) biometric data block as: "+fn+"\n")
+            img= open(fn,'wb+')
+            img.write(bytearray(bit.bio_data))
+            img.flush()
+            img.close()
+    except ValueError as s:
+        print(s)
+    except smartcard.sw.SWExceptions.CheckingErrorException as s:
+        msg = str(s)
+        print(msg)
+        if('Security status not satisfied!' in msg):
+            print("most likely cause: fingerprints are crypto-protected")
+        if('Secure messaging data object incorrect' in msg):
+            print("most likely cause: DG3 doesn't exist")
+
+    print("\nprobing for DG4... (iris)")
+    try:
+        dg4 = DG234(4,0x76)
+        dg4.read_dg234(cardservice.connection, ap)
+        for idx,bit in enumerate(dg4.bio_info_templates):
+            fn = "DG3_"+MRZ_DOC_NO+"_"+str(idx)+".raw"
+            print("saving (raw) biometric data block as: "+fn+"\n")
+            img= open(fn,'wb+')
+            img.write(bytearray(bit.bio_data))
+            img.flush()
+            img.close()
+    except ValueError as s:
+        print(s)
+    except smartcard.sw.SWExceptions.CheckingErrorException as s:
+        msg = str(s)
+        print(msg)
+        if('Security status not satisfied!' in msg):
+            print("most likely cause: iris pattern are crypto-protected")
+        if('Secure messaging data object incorrect' in msg):
+            print("most likely cause: DG4 doesn't exist")
+
 
 except CardRequestTimeoutException:
     print('time-out: no card inserted during last 10s')

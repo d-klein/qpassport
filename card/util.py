@@ -109,7 +109,7 @@ def dec_ber_tlv_len(seq):
         >>> [0xCA, ... ]
 
     :param seq: list of bytes (length value sequence)
-    :return: list of bytes
+    :return: tuple: first element is list of length bytes, snd is data block
     """
     l = 0
     if(seq[0] == 0x84):

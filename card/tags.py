@@ -1,6 +1,6 @@
 from smartcard.util import toHexString
 
-tags = {'t_bio_temp':           [0x02],
+tags = {'t_bio_temp_count':     [0x02],
         't_tag_list':           [0x5C],
         't_lds_version' :       [0x5f,0x01],
         't_dob' :               [0x4f,0x08],
@@ -52,13 +52,21 @@ tags = {'t_bio_temp':           [0x02],
         't_opt_details' :       [0x6d],
         't_rfu' :               [0x6e],
         't_person_to_notify' :  [0x70],
-        't_facial_bio_dg' :     [0x75],
+        't_facial_bio' :        [0x75],
         't_temp_iris' :         [0x76],
         't_ef.sod' :            [0x77],
         't_bio_data_block_ciphered' : [0x7f,0x2e],
         't_bio_info_template' : [0x7f,0x60],
         't_bio_info_group_template' : [0x7f,0x61]
         }
+
+def gets(ls):
+    ret = []
+    for el in ls:
+        val = tags.get(el)
+        if(val != None):
+            ret.add(val)
+    return ret
 
 def lookup(b):
     for key, val in tags.iteritems():
