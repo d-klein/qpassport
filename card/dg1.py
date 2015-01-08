@@ -6,12 +6,12 @@ class DG1:
     read dg1 and extract the machine readable zone (mrz)
 
     Example:
-    >>> dg1 = DG1()
-    >>> dg1.read(connection, secure_messenger)
-    >>> print("raw byte sequence "+str(dg1.mrz_bin))
-    >>> print("mrz line 1: "+str(dg1.mrz_line1))
-    >>> print("mrz line 2: "+str(dg1.mrz_line2))
-    >>> print("mrz line 3: "+str(dg1.mrz_line3))
+        >>> dg1 = DG1()
+        >>> dg1.read(connection, secure_messenger)
+        >>> print("raw byte sequence "+str(dg1.mrz_bin))
+        >>> print("mrz line 1: "+str(dg1.mrz_line1))
+        >>> print("mrz line 2: "+str(dg1.mrz_line2))
+        >>> print("mrz line 3: "+str(dg1.mrz_line3))
     """
 
     def __init__(self):

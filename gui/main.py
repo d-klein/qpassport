@@ -16,7 +16,6 @@ from card.bac import run_bac
 from card.efcom import EFCom
 from card.dg1 import DG1
 from card.dg2 import DG2
-from mrz_dialog import Mrz_Dialog
 
 class OutLog:
     def __init__(self, edit, out=None, color=None):

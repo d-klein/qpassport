@@ -32,13 +32,13 @@ class DG2:
     read dg2 and extract the jp2 image file
 
     Example:
-    >>> dg2 = DG2()
-    >>> dg2.read(connection, secure_messenger)
-    >>> if(dg2.raw_image):
-    >>>     img= open("portrait.jp2",'wb+')
-    >>>     img.write(bytearray(dg2.raw_image))
-    >>>     img.flush()
-    >>>     img.close()
+        >>> dg2 = DG2()
+        >>> dg2.read(connection, secure_messenger)
+        >>> if(dg2.raw_image):
+        >>>     img= open("portrait.jp2",'wb+')
+        >>>     img.write(bytearray(dg2.raw_image))
+        >>>     img.flush()
+        >>>     img.close()
 
     """
     def __init__(self):

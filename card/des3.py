@@ -9,11 +9,11 @@ class TDES:
     """
     simple wrapper class for triple des encoding and decoding
     Example:
-    >>> s = hs2il('781723860C06C2264608F919887022120B795240CB7049B01C19B33E32804F0B')
-    >>> k_enc = util.hs2il('AB94FDECF2674FDFB9B391F85D7F76F2')
-    >>> tdes = TDES(k_enc)
-    >>> msg = tdes.enc(s)
-    >>> msg2 = tdes.dec(msg)
+        >>> s = hs2il('781723860C06C2264608F919887022120B795240CB7049B01C19B33E32804F0B')
+        >>> k_enc = util.hs2il('AB94FDECF2674FDFB9B391F85D7F76F2')
+        >>> tdes = TDES(k_enc)
+        >>> msg = tdes.enc(s)
+        >>> msg2 = tdes.dec(msg)
     """
     def __init__(self,key):
         self.key = key

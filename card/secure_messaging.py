@@ -9,18 +9,18 @@ class SecureMessenger:
 
     Example:
     Initialize
-    >>> key_mac = hs2il('F1CB1F1FB5ADF208806B89DC579DC1F8')
-    >>> ssc = hs2il('887022120C06C227')
-    >>> des = TDES(key_enc)
-    >>> rmac = RMAC(key_mac)
-    >>> ap = SecureMessenger(des.enc, des.dec, rmac.mac,ssc)
+        >>> key_mac = hs2il('F1CB1F1FB5ADF208806B89DC579DC1F8')
+        >>> ssc = hs2il('887022120C06C227')
+        >>> des = TDES(key_enc)
+        >>> rmac = RMAC(key_mac)
+        >>> ap = SecureMessenger(des.enc, des.dec, rmac.mac,ssc)
 
     Set debug = True, to trace (decrypted) commands
     Transmit:
-    >>> rapdu,sw1,sw2 = ap.transmit_secure(connection,0x00,0xB0,0x00,0x00,None,None,[0x06])
+        >>> rapdu,sw1,sw2 = ap.transmit_secure(connection,0x00,0xB0,0x00,0x00,None,None,[0x06])
 
     To decode, if response apdu contains do87:
-    >>> data = ap.parse_deccrypt_do87(rapdu)
+        >>> data = ap.parse_deccrypt_do87(rapdu)
     """
     def __init__(self,func_des_enc,func_des_dec,func_mac,ssc):
         self.des3enc = func_des_enc
@@ -110,7 +110,6 @@ class SecureMessenger:
 
     def __decode_do87(self,rapdu):
         head, data = dec_ber_tlv_len(rapdu[1:])
-        print("enc data "+toHexString(data))
         return [0x87] + head + data
 
     def __verifyRAPDU(self,rapdu):

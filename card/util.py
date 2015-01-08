@@ -105,8 +105,8 @@ def dec_ber_tlv_len(seq):
     data block of length l
 
     Example:
-    >>> dec_ber_tlv_len([0x81, 0xFE, 0xCA, ...])
-    [0xCA, ... ]
+        >>> dec_ber_tlv_len([0x81, 0xFE, 0xCA, ...])
+        >>> [0xCA, ... ]
 
     :param seq: list of bytes (length value sequence)
     :return: list of bytes
@@ -135,8 +135,8 @@ def get_ber_tlv_len(seq):
     and the length of bytes encoding l as a tuple
 
     Example:
-    >>> get_ber_tlv_len([0x81, 0xFE, 0xCA, ...])
-    (0xFE, 2)
+        >>> get_ber_tlv_len([0x81, 0xFE, 0xCA, ...])
+        >>> (0xFE, 2)
 
     :param seq: list of byte
     :return: list of byte
@@ -191,11 +191,11 @@ class Tlv_reader():
     very simple TLV Decoder
 
     Example:
-    initialize with list of tags [0xCA] and byte sequence
-    >>> reader = Tlv_reader([[0xCA], [0xFE]], [0xCA, 0x02, 0xAA, 0xBB, 0xFE, 0x01, 0xEF])
-    read the data field of tag 0xCA
-    >>> reader.read([0xCA])
-    [0xAA, 0xBB]
+        initialize with list of tags [0xCA] and byte sequence
+        >>> reader = Tlv_reader([[0xCA], [0xFE]], [0xCA, 0x02, 0xAA, 0xBB, 0xFE, 0x01, 0xEF])
+        read the data field of tag 0xCA
+        >>> reader.read([0xCA])
+        [0xAA, 0xBB]
 
     can only decode TLV sequences where length field has one byte length,
     i.e. value is <= 255 byte
