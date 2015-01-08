@@ -14,16 +14,17 @@ from card.retail_mac import RMAC
 from card.bac import run_bac
 from card.efcom import EFCom
 from card.dg1 import DG1
-from card.dg2 import DG234
+from card.dg234 import DG234
+from card.dg567 import DG567
 import card.tags
 import smartcard
 
 MRZ_DOC_NO = 'YV42109H95'
 MRZ_DOB    = '6305213'
 MRZ_EXP    = '1203314'
-#MRZ_DOC_NO = 'C4J6R0H111'
-#MRZ_DOB    = '8103206'
-#MRZ_EXP    = '1808074'
+MRZ_DOC_NO = 'C4J6R0H111'
+MRZ_DOB    = '8103206'
+MRZ_EXP    = '1808074'
 
 DEBUG = False
 
@@ -77,7 +78,7 @@ try:
 
     print("\nreading DG2... (facial image)")
     dg2 = DG234(2,0x75)
-    dg2.read_dg234(cardservice.connection, ap)
+    #dg2.read_dg234(cardservice.connection, ap)
     for idx,bit in enumerate(dg2.bio_info_templates):
         print(str(bit))
         if(bit.jp2):
@@ -136,6 +137,40 @@ try:
             print("most likely cause: iris pattern are crypto-protected")
         if('Secure messaging data object incorrect' in msg):
             print("most likely cause: DG4 doesn't exist")
+
+    for i in xrange(5,8):
+        s_of_i = str(i)
+        print("\nprobing for DG"+s_of_i+"...")
+        try:
+            dg5 = DG567(i)
+            dg5.read_dg567(cardservice.connection, ap)
+            for idx,t in enumerate(dg5.image_templates):
+                if(t.portrait):
+                    fn = "DG"+s_of_i+"_"+MRZ_DOC_NO+"_portrait_"+str(idx)+".jpg"
+                print("saving portrait as: "+fn+"\n")
+                img= open(fn,'wb+')
+                img.write(bytearray(t.portrait))
+                img.flush()
+                img.close()
+                if(t.signature):
+                    fn = "DG"+s_of_i+"_"+MRZ_DOC_NO+"_disp_sig_"+str(idx)+".jpg"
+                    print("saving displayed signature as: "+fn+"\n")
+                    img= open(fn,'wb+')
+                    img.write(bytearray(t.signature))
+                    img.flush()
+                    img.close()
+        except ValueError as s:
+            print(s)
+        except smartcard.sw.SWExceptions.CheckingErrorException as s:
+            msg = str(s)
+            print(msg)
+            if('Security status not satisfied!' in msg):
+                print("most likely cause: data are crypto-protected")
+            if('Secure messaging data object incorrect' in msg):
+                print("most likely cause: DG doesn't exist")
+            if('Referenced data not found' in msg):
+                print("most likely cause: DG doesn't exist")
+
 
 
 except CardRequestTimeoutException:
