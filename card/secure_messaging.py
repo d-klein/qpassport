@@ -1,4 +1,5 @@
 from smartcard.util import toHexString
+import smartcard
 
 from util import pad,hs2il, set_bit_at,ber_tlv_len,dec_ber_tlv_len,unpad
 
@@ -28,6 +29,9 @@ class SecureMessenger:
         self.mac     = func_mac
         self.ssc     = ssc
         self.debug   = False
+
+    def inc_ssc(self):
+        self.__inc_ssc()
 
     def __inc_ssc(self):
         done = False
@@ -139,8 +143,8 @@ class SecureMessenger:
         """
         self.__inc_ssc()
         papdu = self.__protectAPDU(cla,ins,p1,p2,lc,data,le)
-        rapdu,sw1,sw2 = connection.transmit( papdu )
         self.__inc_ssc()
+        rapdu,sw1,sw2 = connection.transmit( papdu )
         self.__verifyRAPDU(rapdu+[sw1,sw2])
         return rapdu,sw1,sw2
 

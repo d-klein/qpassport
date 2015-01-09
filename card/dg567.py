@@ -74,7 +74,7 @@ class DG567:
         """
 
         # select DG2
-        ap.transmit_secure(connection,0x00,0xA4,0x02,0x0C,0x02,[0x01,0x04],None)
+        ap.transmit_secure(connection,0x00,0xA4,0x02,0x0C,[0x02],[0x01,self.file_id],None)
 
         # read length (first 6 bytes) of DG2 to get file length
         rapdu,sw1,sw2 = ap.transmit_secure(connection,0x00,0xB0,0x00,0x00,None,None,[0x06])

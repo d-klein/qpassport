@@ -151,15 +151,13 @@ class DG234:
         """
 
         # select DG2
-        # ap.transmit_secure(connection,0x00,0xA4,0x02,0x0C,0x02,[0x01,self.file_id],None)
-        ap.transmit_secure(connection,0x00,0xA4,0x02,0x0C,0x02,[0x01,0x04],None)
-        print("iris selected")
+        ap.transmit_secure(connection,0x00,0xA4,0x02,0x0C,[0x02],[0x01,self.file_id],None)
 
         # read length (first 6 bytes) of DG2 to get file length
         rapdu,sw1,sw2 = ap.transmit_secure(connection,0x00,0xB0,0x00,0x00,None,None,[0x06])
         data = ap.parse_decrypt_do87(rapdu)
 
-        if(data[0] == 0x76):
+        if(data[0] == self.tag):
             # read DG2/DG3/DG4
             # decode length of DG2/3/4
             l,len_of_l = get_ber_tlv_len(data[1:])
