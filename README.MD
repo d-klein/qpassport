@@ -2,8 +2,8 @@ About
 ------
 ------
 
-QPassport Reader is a simple (and somewhat crude) Linux/Unix
-Application to read datagroup 1 (DG1, digitally stored 
+Passport Reader is a simple (and somewhat crude) Linux/Unix
+command line application to read datagroup 1 (DG1, digitally stored 
 Machine Readable Zone) and datagroup 2 (DG2, digitally stored portrait)
 by executing Basic Access Control (BAC) as defined in ICAO 9303.
 
@@ -18,12 +18,6 @@ At least I hope so :-)
 
 License is GNU GPL 2.
 (c) 2014,2015 Dominik Klein
-
-Screenshot
-----------
-----------
-
-![Application Screenshot](https://raw.githubusercontent.com/d-klein/qpassport/master/screenshot.png)
 
 Installation
 ------------
