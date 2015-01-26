@@ -16,17 +16,20 @@ from card.efcom import EFCom
 from card.dg1 import DG1
 from card.dg234 import DG234
 from card.dg567 import DG567
-import card.tags
 import smartcard
+from card.datagroup import read_secure,read_unencrypted
+from card.tags import *
+from pyasn1.codec.ber import encoder,decoder
 
-#MRZ_DOC_NO = 'YV42109H95'
-#MRZ_DOB    = '6305213'
-#MRZ_EXP    = '1203314'
-MRZ_DOC_NO = 'C4J6R0H111'
-MRZ_DOB    = '8103206'
-MRZ_EXP    = '1808074'
 
-DEBUG = True
+MRZ_DOC_NO = 'YV42109H95'
+MRZ_DOB    = '6305213'
+MRZ_EXP    = '1203314'
+#MRZ_DOC_NO = 'C4J6R0H111'
+#MRZ_DOB    = '8103206'
+#MRZ_EXP    = '1808074'
+
+DEBUG = False
 
 print("\naccessing e-passport with:")
 print("document number: "+str(MRZ_DOC_NO))
@@ -35,7 +38,7 @@ print("expiration date: "+str(MRZ_EXP))
 
 MRZ_INFO = MRZ_DOC_NO + MRZ_DOB + MRZ_EXP
 BAC_IV = "0000000000000000".decode('hex')
-
+print("MRZ INFO: "+MRZ_INFO)
 # request any card
 cardtype = AnyCardType()
 cardrequest = CardRequest( timeout=10, cardType=cardtype )
@@ -55,6 +58,13 @@ try:
     # send a few apdus; exceptions will occur upon errors
     cardservice.connection.connect()
 
+    # read ef.cardaccess
+    print("\nreading EF.CardAccess")
+    data = read_unencrypted(cardservice.connection,FID_EF_CARD_ACCESS)
+    print("received: "+toHexString(data))
+    foo = decoder.decode(smartcard.util.hl2bs(data))
+    print(foo)
+
     # run Basic Access Control for secure messaging
     (ks_enc, ks_mac, ssc) = run_bac(cardservice.connection, MRZ_INFO)
 
@@ -67,18 +77,21 @@ try:
 
     # read ef.com
     print("\nreading EF.COM...")
+    data = read_secure(ap,cardservice.connection,TAG_EF_COM,FID_EF_COM)
     efcom = EFCom()
-    efcom.read_ef_com(cardservice.connection, ap)
+    efcom.from_bin_data(data)
     print(str(efcom))
 
     print("reading DG1...")
+    data = read_secure(ap,cardservice.connection,TAG_EF_DG1,FID_EF_DG1)
     dg1 = DG1()
-    dg1.read_dg1(cardservice.connection, ap)
+    dg1.from_bin_data(data)
     print(str(dg1))
 
     print("\nreading DG2... (facial image)")
-    dg2 = DG234(2,0x75)
-    dg2.read_dg234(cardservice.connection, ap)
+    data = read_secure(ap,cardservice.connection,TAG_EF_DG2,FID_EF_DG2)
+    dg2 = DG234(FID_EF_DG2)
+    dg2.from_bin_data(data)
     for idx,bit in enumerate(dg2.bio_info_templates):
         print(str(bit))
         if(bit.jp2):
@@ -96,76 +109,69 @@ try:
             img.flush()
             img.close()
 
-    print("\nreading DG2... (facial image)")
-    dg2 = DG234(2,0x75)
-    dg2.read_dg234(cardservice.connection, ap)
-
-    #print("\nprobing for DG3... (fingerprints)")
-    #try:
-    #    dg3 = DG234(3,0x63)
-    #    dg3.read_dg234(cardservice.connection, ap)
-    #    for idx,bit in enumerate(dg3.bio_info_templates):
-    #        fn = "DG3_"+MRZ_DOC_NO+"_"+str(idx)+".raw"
-    #        print("saving (raw) biometric data block as: "+fn+"\n")
-    #        img= open(fn,'wb+')
-    #        img.write(bytearray(bit.bio_data))
-    #        img.flush()
-    #        img.close()
-    #except ValueError as s:
-    #    print(s)
-    #except smartcard.sw.SWExceptions.CheckingErrorException as s:
-    #    msg = str(s)
-    #    print(msg)
-    #    if('Security status not satisfied!' in msg):
-    #        print("most likely cause: fingerprints are crypto-protected")
-    #    if('Secure messaging data object incorrect' in msg):
-    #        print("most likely cause: DG3 doesn't exist")
+    try:
+        print("\nprobing for DG3... (fingerprints)")
+        data = read_secure(ap,cardservice.connection,TAG_EF_DG3,FID_EF_DG3)
+        dg3 = DG234(FID_EF_DG3)
+        dg3.from_bin_data(data)
+        for idx,bit in enumerate(dg3.bio_info_templates):
+            fn = "DG3_"+MRZ_DOC_NO+"_"+str(idx)+".raw"
+            print("saving (raw) biometric data block as: "+fn+"\n")
+            raw= open(fn,'wb+')
+            raw.write(bytearray(bit.bio_data))
+            raw.flush()
+            raw.close()
+    except smartcard.sw.SWExceptions.CheckingErrorException as s:
+        msg = str(s)
+        print(msg)
+        if('Security status not satisfied!' in msg):
+            print("most likely cause: fingerprints are crypto-protected")
 
 
+    print("\nprobing for DG4... (iris)")
+    try:
+        data = read_secure(ap,cardservice.connection,TAG_EF_DG4,FID_EF_DG4)
+        dg4 = DG234(FID_EF_DG4)
+        dg4.from_bin_data(data)
+        for idx,bit in enumerate(dg4.bio_info_templates):
+            fn = "DG3_"+MRZ_DOC_NO+"_"+str(idx)+".raw"
+            print("saving (raw) biometric data block as: "+fn+"\n")
+            img= open(fn,'wb+')
+            img.write(bytearray(bit.bio_data))
+            img.flush()
+            img.close()
+    except ValueError as s:
+        print(s)
+    except smartcard.sw.SWExceptions.CheckingErrorException as s:
+        msg = str(s)
+        print(msg)
+        if('Security status not satisfied!' in msg):
+            print("most likely cause: iris pattern are crypto-protected")
 
-    #print("\nprobing for DG4... (iris)")
-    #try:
-    #    dg4 = DG234(4,0x76)
-    #    dg4.read_dg234(cardservice.connection, ap)
-    #    for idx,bit in enumerate(dg4.bio_info_templates):
-    #        fn = "DG3_"+MRZ_DOC_NO+"_"+str(idx)+".raw"
-    #        print("saving (raw) biometric data block as: "+fn+"\n")
-    #        img= open(fn,'wb+')
-    #        img.write(bytearray(bit.bio_data))
-    #        img.flush()
-    #        img.close()
-    #except ValueError as s:
-    #    print(s)
-    #except smartcard.sw.SWExceptions.CheckingErrorException as s:
-    #    msg = str(s)
-    #    print(msg)
-    #    if('Security status not satisfied!' in msg):
-    #        print("most likely cause: iris pattern are crypto-protected")
-    #    if('Secure messaging data object incorrect' in msg):
-    #        print("most likely cause: DG4 doesn't exist")
-
-
-    for i in xrange(6,8):
+    FIDS = [FID_EF_DG5,FID_EF_DG6,FID_EF_DG7,FID_EF_DG8]
+    TIDS = [TAG_EF_DG5,TAG_EF_DG6,TAG_EF_DG7,TAG_EF_DG8,]
+    for i in xrange(5,8):
         s_of_i = str(i)
         print("\nprobing for DG"+s_of_i+"...")
         try:
-            dg5 = DG567(i)
-            dg5.read_dg567(cardservice.connection, ap)
-            for idx,t in enumerate(dg5.image_templates):
+            dgi = DG567(FIDS[i-5])
+            data = read_secure(ap,cardservice.connection,FIDS[i-5],TIDS[i-5])
+            dgi.from_bin_data(data)
+            for idx,t in enumerate(dgi.image_templates):
                 if(t.portrait):
                     fn = "DG"+s_of_i+"_"+MRZ_DOC_NO+"_portrait_"+str(idx)+".jpg"
                 print("saving portrait as: "+fn+"\n")
-                img= open(fn,'wb+')
-                img.write(bytearray(t.portrait))
-                img.flush()
-                img.close()
+                f= open(fn,'wb+')
+                f.write(bytearray(t.portrait))
+                f.flush()
+                f.close()
                 if(t.signature):
                     fn = "DG"+s_of_i+"_"+MRZ_DOC_NO+"_disp_sig_"+str(idx)+".jpg"
                     print("saving displayed signature as: "+fn+"\n")
-                    img= open(fn,'wb+')
-                    img.write(bytearray(t.signature))
-                    img.flush()
-                    img.close()
+                    f= open(fn,'wb+')
+                    f.write(bytearray(t.signature))
+                    f.flush()
+                    f.close()
         except ValueError as s:
             print(s)
         except smartcard.sw.SWExceptions.CheckingErrorException as s:
@@ -173,11 +179,6 @@ try:
             print(msg)
             if('Security status not satisfied!' in msg):
                 print("most likely cause: data are crypto-protected")
-            if('Secure messaging data object incorrect' in msg):
-                print("most likely cause: DG doesn't exist")
-            if('Referenced data not found' in msg):
-                print("most likely cause: DG doesn't exist")
-
 
 
 except CardRequestTimeoutException:

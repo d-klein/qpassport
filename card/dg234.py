@@ -1,6 +1,5 @@
 from card.util import get_ber_tlv_len, dec_ber_tlv_len, make_offset
 from smartcard.util import toHexString
-import tags
 import tlv
 
 class Bio_info_template:
@@ -56,10 +55,9 @@ class DG234:
         >>>     img.close()
 
     """
-    def __init__(self,file_id,tag):
+    def __init__(self,file_id):
         self.bio_info_templates = []
         self.file_id = file_id
-        self.tag = tag
 
     def __get_jp2_image(self,seq):
         # crude version:
@@ -85,6 +83,8 @@ class DG234:
             idx += 1
         raise ValueError("no jpeg found")
 
+    def from_bin_data(self,data):
+        self.__parse_bio_templates(data)
 
     def __parse_bio_templates(self,byte_list):
         data_all = tlv.extract_value([0x7f,0x61],[],byte_list)
@@ -139,47 +139,3 @@ class DG234:
 
                 self.bio_info_templates.append(bit)
                 idx += length
-
-    def read_dg234(self,connection,ap):
-        """
-        reads jp2 image from dg2 and stores list of byte
-        in self.raw_image
-
-        :param connection: pyscard connection
-        :param ap: secure messaging object for apdu protection
-        :return:
-        """
-
-        # select DG2
-        ap.transmit_secure(connection,0x00,0xA4,0x02,0x0C,[0x02],[0x01,self.file_id],None)
-
-        # read length (first 6 bytes) of DG2 to get file length
-        rapdu,sw1,sw2 = ap.transmit_secure(connection,0x00,0xB0,0x00,0x00,None,None,[0x06])
-        data = ap.parse_decrypt_do87(rapdu)
-
-        if(data[0] == self.tag):
-            # read DG2/DG3/DG4
-            # decode length of DG2/3/4
-            l,len_of_l = get_ber_tlv_len(data[1:])
-            data_block = []
-            # offset = one byte of 0x75 + length of length field itself
-            offset = len_of_l + 1
-            iterations = l // 255
-            last_len = l % 255
-            # read dg2
-            for i in xrange(0,iterations):
-                p1,p2 = make_offset(offset)
-                rapdu,sw1,sw2 = ap.transmit_secure(connection,0x00,0xB0,p1,p2,None,None,[255])
-                data = ap.parse_decrypt_do87(rapdu)
-                data_block.extend(data)
-                offset += 255
-            p1,p2 = make_offset(offset)
-            rapdu,sw1,sw2 = ap.transmit_secure(connection,0x00,0xB0,p1,p2,None,None,[last_len])
-            data = ap.parse_decrypt_do87(rapdu)
-            data_block += data
-
-            # extract bio data block
-            self.__parse_bio_templates(data_block)
-        else:
-            raise ValueError("error reading datagroup (not present?)")
-

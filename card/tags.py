@@ -1,5 +1,44 @@
 from smartcard.util import toHexString
 
+TAG_EF_COM  = 0x60
+TAG_EF_DG1  = 0x61
+TAG_EF_DG2  = 0x75
+TAG_EF_DG3  = 0x63
+TAG_EF_DG4  = 0x76
+TAG_EF_DG5  = 0x65
+TAG_EF_DG6  = 0x66
+TAG_EF_DG7  = 0x67
+TAG_EF_DG8  = 0x68
+TAG_EF_DG9  = 0x69
+TAG_EF_DG10 = 0x6a
+TAG_EF_DG11 = 0x6b
+TAG_EF_DG12 = 0x6c
+TAG_EF_DG13 = 0x6d
+TAG_EF_DG14 = 0x6e
+TAG_EF_DG15 = 0x6f
+TAG_EF_DG16 = 0x70
+TAG_EF_SOD  = 0x77
+
+FID_EF_COM  = 0x1e
+FID_EF_DG1  = 0x01
+FID_EF_DG2  = 0x02
+FID_EF_DG3  = 0x03
+FID_EF_DG4  = 0x04
+FID_EF_DG5  = 0x05
+FID_EF_DG6  = 0x06
+FID_EF_DG7  = 0x07
+FID_EF_DG8  = 0x08
+FID_EF_DG9  = 0x09
+FID_EF_DG10 = 0x0a
+FID_EF_DG11 = 0x0b
+FID_EF_DG12 = 0x0c
+FID_EF_DG13 = 0x0d
+FID_EF_DG14 = 0x0e
+FID_EF_DG15 = 0x0f
+FID_EF_DG16 = 0x10
+FID_EF_SOD  = 0x1d
+FID_EF_CARD_ACCESS = 0x1c
+
 tags = {'t_bio_temp_count':     [0x02],
         't_tag_list':           [0x5C],
         't_lds_version' :       [0x5f,0x01],
